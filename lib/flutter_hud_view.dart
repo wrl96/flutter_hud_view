@@ -17,7 +17,7 @@ class HUDView {
 
   /// 通过[of]从[_hudMap]中获取相关实例
   /// 当[_hudMap]中没有实例的时候会新建一个但不会保存
-  /// 只有再调用[_HUD.init()]后才会保存
+  /// 只有在调用[_HUD.init()] 或 [_HUD.update()]后才会保存
   static _HUD of(BuildContext context) {
     if (_hudMap.containsKey(context)) {
       return _hudMap[context];
@@ -72,17 +72,14 @@ class _HUD {
   /// 点击对话框外部是否关闭
   bool tapClose;
 
-  /// 是否设置倒计时自动关闭
-  bool timerClose;
+  /// 对话框关闭时的回调函数
+  Function closeCallback;
 
   /// 倒计时关闭，单位 秒
-  int timerSeconds;
+  int countdown;
 
   /// 显示状态
   bool _visible;
-
-  /// 自动销毁
-  bool _autoDestroy;
 
   /// 持有的[_HUDWidget.key]
   GlobalKey<_HUDWidgetState> _hudWidgetStateKey;
@@ -93,7 +90,6 @@ class _HUD {
   _HUD(this.context) {
     this._hudWidgetStateKey = GlobalKey();
     this._visible = false;
-    this._autoDestroy = false;
   }
 
 
@@ -111,8 +107,8 @@ class _HUD {
     Widget customWidget,
     Widget customIndicatorWidget,
     bool tapClose = false,
-    bool timerClose = false,
-    int timerSeconds,
+    Function closeCallback,
+    int countdown,
   }) {
     this.hudType = hudType;
     this.hudIndicatorType = hudIndicatorType;
@@ -124,16 +120,15 @@ class _HUD {
     this.customWidget = customWidget;
     this.customIndicatorWidget = customIndicatorWidget;
     this.tapClose = tapClose;
-    this.timerClose = timerClose;
-    this.timerSeconds = timerSeconds;
+    this.closeCallback = closeCallback;
+    this.countdown = countdown;
     if (this.hudType == HUDType.CUSTOM) assert(customWidget != null);
     if (this.hudIndicatorType == HUDIndicatorType.CUSTOM) assert(customIndicatorWidget != null);
-    if (this.timerClose) assert(timerSeconds != null);
     if (this.backgroundColor == null) {
-      if (this.hudType == HUDType.ANDROID) {
-        this.backgroundColor = Color(0xA0000000);
-      } else {
+      if (this.hudType == HUDType.IOS) {
         this.backgroundColor = Color(0x00FFFFFF);
+      } else {
+        this.backgroundColor = Color(0xA0000000);
       }
     }
     HUDView._hudMap[context] = this;
@@ -157,10 +152,12 @@ class _HUD {
     Widget customWidget,
     Widget customIndicatorWidget,
     bool tapClose,
-    bool timerClose,
-    int timerSeconds,
+    Function closeCallback,
+    int countdown,
   }) {
-    assert(HUDView._hudMap.containsKey(this.context));
+    if (!HUDView._hudMap.containsKey(this.context)) {
+      init();
+    }
     if (hudType != null) this.hudType = hudType;
     if (hudIndicatorType != null) this.hudIndicatorType = hudIndicatorType;
     if (text != null) this.text = text;
@@ -170,15 +167,14 @@ class _HUD {
     if (backgroundColor != null) this.backgroundColor = backgroundColor;
     if (customWidget != null) this.customWidget = customWidget;
     if (customIndicatorWidget != null) this.customIndicatorWidget = customIndicatorWidget;
-    if (tapClose != null ) this.tapClose = tapClose;
-    if (timerClose != null) this.timerClose = timerClose;
-    if (timerSeconds != null) this.timerSeconds = timerSeconds;
-    if (this.hudType == HUDType.CUSTOM) assert(customWidget != null);
-    if (this.hudIndicatorType == HUDIndicatorType.CUSTOM) assert(customIndicatorWidget != null);
-    if (this.timerClose) {
-      assert(this.timerSeconds != null);
+    if (tapClose != null) this.tapClose = tapClose;
+    if (closeCallback != null) this.closeCallback = closeCallback;
+    if (countdown != null) {
+      this.countdown = countdown;
       this._timer?.cancel();
     }
+    if (this.hudType == HUDType.CUSTOM) assert(customWidget != null);
+    if (this.hudIndicatorType == HUDIndicatorType.CUSTOM) assert(customIndicatorWidget != null);
     return this;
   }
 
@@ -186,28 +182,65 @@ class _HUD {
   /// 展示HUD
   /// [autoDestroy] 自动销毁，仅在[timerClose] = true时有效
   /// 关闭时自动销毁该[context]在[HUDView]中的实例
-  _HUD show({autoDestroy = false}) {
-    _autoDestroy = autoDestroy;
-    if (timerClose) {
+  _HUD show() {
+    if (countdown != null) {
       _timer?.cancel();
-      _timer = Timer(Duration(seconds: timerSeconds), () {
-        if (_autoDestroy) {
-          this.destroy();
-        } else {
-          this.dismiss();
-        }
+      _timer = Timer(Duration(seconds: countdown), () {
+        this.dismiss();
       });
     }
     if (!_visible) {
       Navigator.of(context).push(
           PageRouteBuilder(
               opaque: false,
+              transitionsBuilder: (
+                  BuildContext context,
+                  Animation<double> animation1,
+                  Animation<double> animation2,
+                  Widget child
+                  ) {
+                return FadeTransition(
+                  opacity: Tween(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: animation1,
+                        curve: Curves.fastOutSlowIn,
+                      )
+                  ),
+                  child: child,
+                );
+              },
               pageBuilder: (context, _, __) {
                 _visible = true;
                 return _HUDWidget(_hudWidgetStateKey, this);
               }));
     } else {
-      _hudWidgetStateKey.currentState.updateConfig(this);
+      if (_hudWidgetStateKey.currentState != null) {
+        _hudWidgetStateKey.currentState?.updateConfig(this);
+      } else {
+        Navigator.of(context).push(
+            PageRouteBuilder(
+                opaque: false,
+                transitionsBuilder: (
+                    BuildContext context,
+                    Animation<double> animation1,
+                    Animation<double> animation2,
+                    Widget child
+                ) {
+                  return FadeTransition(
+                    opacity: Tween(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: animation1,
+                        curve: Curves.fastOutSlowIn,
+                      )
+                    ),
+                    child: child,
+                  );
+                },
+                pageBuilder: (context, _, __) {
+                  _visible = true;
+                  return _HUDWidget(_hudWidgetStateKey, this);
+                }));
+      }
     }
     return this;
   }
@@ -217,21 +250,14 @@ class _HUD {
   /// 如果在关闭后不再需要[update]，请使用[destroy]
   _HUD dismiss() {
     this._timer?.cancel();
-    _autoDestroy = false;
     if (_visible) {
+      if (closeCallback != null) {
+        closeCallback();
+      }
       Navigator.of(_hudWidgetStateKey.currentContext).pop();
       _hudWidgetStateKey = GlobalKey();
       _visible = false;
     }
-    return this;
-  }
-
-
-  /// 销毁HUD
-  /// 在关闭该HUD的基础上销毁了该[context]在[HUDView]中的实例
-  /// 销毁后再调用[update]会报错，如需使用请重新调用[init]
-  _HUD destroy() {
-    this.dismiss();
     HUDView._hudMap.remove(context);
     return this;
   }
@@ -282,22 +308,20 @@ class _HUDWidgetState extends State<_HUDWidget> {
         child: Container(
             color: Color(0x00FFFFFF),
             constraints: BoxConstraints.expand(),
-            child: _getCenterContent()
+            child: GestureDetector(
+              child: _getCenter(),
+            )
         ),
         onTap: () {
           if (_config.tapClose) {
-            if (_config._autoDestroy) {
-              _config.destroy();
-            } else {
-              _config.dismiss();
-            }
+            _config.dismiss();
           }
         },
       ),
     );
   }
 
-  Widget _getCenterContent() {
+  Widget _getCenter() {
     return Center(
       child: _config.hudType == HUDType.CUSTOM ? _config.customWidget : Container(
         height: MediaQuery.of(context).size.width * 0.3,
@@ -362,9 +386,7 @@ class _HUDWidgetState extends State<_HUDWidget> {
     if (_config.hudIndicatorType == HUDIndicatorType.FAIL) return Icon(CupertinoIcons.clear_thick, color: _getHUDColor(), size: MediaQuery.of(context).size.width * 0.15,);
     if (_config.hudType == HUDType.ANDROID) return CircularProgressIndicator(
         valueColor: new AlwaysStoppedAnimation(_getHUDColor()));
-    if (_config.hudType == HUDType.IOS) return CupertinoActivityIndicator(
-      radius: MediaQuery.of(context).size.width * 0.05,
-    );
+    if (_config.hudType == HUDType.IOS) return CupertinoActivityIndicator(radius: MediaQuery.of(context).size.width * 0.05);
     return Container();
   }
 }
