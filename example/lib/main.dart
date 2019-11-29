@@ -96,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             FlatButton(
               onPressed: () {
-                HUDView.of(context).init(timerClose: true, timerSeconds: 2).show(autoDestroy: true);
+                HUDView.of(context).update(countdown: 2).show();
               },
               child: Text(
                 'Simple Example'
@@ -105,13 +105,12 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudType: HUDType.IOS,
                   text: 'Loading...',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'iOS Style'
@@ -120,13 +119,12 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudType: HUDType.ANDROID,
                   text: 'Loading...',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'Android Style'
@@ -135,13 +133,12 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudIndicatorType: HUDIndicatorType.SUCCESS,
                   text: 'Success',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'Success'
@@ -150,13 +147,12 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudIndicatorType: HUDIndicatorType.FAIL,
                   text: 'Failure',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'Failure'
@@ -165,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudIndicatorType: HUDIndicatorType.CUSTOM,
                   customIndicatorWidget: Icon(
                     Icons.error,
@@ -173,10 +169,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     size: MediaQuery.of(context).size.width * 0.15,
                   ),
                   text: 'Custom Indicator',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'Custom Indicator Widget'
@@ -185,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
+                hud.update(
                   hudType: HUDType.CUSTOM,
                   customWidget: Card(
                     //color: Colors.red,
@@ -197,10 +192,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   backgroundColor: Color(0xA0000000),
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                 'Custom Widget'
@@ -208,13 +202,13 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             FlatButton(
               onPressed: () {
-                HUDView.of(context).init(hudType: HUDType.IOS, timerClose: true, timerSeconds: 3).show();
+                HUDView.of(context).update(hudType: HUDType.IOS, countdown: 3).show();
                 Timer(Duration(seconds: 2), (){
-                  HUDView.of(context).update(hudType: HUDType.ANDROID, text: 'update').show(autoDestroy: true);
+                  HUDView.of(context).update(hudType: HUDType.ANDROID, text: 'update').show();
                 });
               },
               child: Text(
-                  'Init and Update'
+                  'Update'
               )
             ),
             FlatButton(
@@ -227,14 +221,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Text(
-                          'Tap anywhere to close'
+                        'Tap anywhere to close'
                       ),
                     ),
                   ),
                   backgroundColor: Color(0xA0000000),
                   tapClose: true
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                   'Tap close'
@@ -243,42 +237,19 @@ class _MyHomePageState extends State<MyHomePage> {
             FlatButton(
               onPressed: () {
                 var hud = HUDView.of(context);
-                hud.init(
-                  hudType: HUDType.IOS,
+                hud.update(
+                  hudType: HUDType.ANDROID,
                   hudColor: Colors.black,
                   hudTextColor: Colors.black,
                   hudBackgroundColor: Colors.white,
                   backgroundColor: Color(0xA0000000),
                   text: 'Custom Color',
-                  timerClose: true,
-                  timerSeconds: 2
+                  countdown: 2
                 );
-                hud.show(autoDestroy: true);
+                hud.show();
               },
               child: Text(
                   'Custom Color'
-              )
-            ),
-            FlatButton(
-              onPressed: () {
-                HUDView.of(context).init(text: '1').show();
-                Timer(Duration(seconds: 2), () {
-                  HUDView.of(context).dismiss();
-                  HUDView.of(context).update(text: '2').show();
-                  Timer(Duration(seconds: 2), () {
-                    HUDView.of(context).destroy();
-                    try {
-                      HUDView.of(context).update(text: '3');
-                    } catch(e) {
-                      /// Can't call update after destroy
-                      /// Please call init after destroy
-                      HUDView.of(context).init(text: '4', timerClose: true, timerSeconds: 2).show(autoDestroy: true);
-                    }
-                  });
-                });
-              },
-              child: Text(
-                'Dismiss and Destroy'
               )
             ),
           ],
